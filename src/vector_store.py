@@ -35,16 +35,12 @@ class VectorStore:
         Args:
             documents: インデックス化するドキュメントのリスト
         """
-        try:
-            self.vector_store = Chroma.from_documents(
-                documents=documents,
-                embedding=self.embedding_function,
-                persist_directory=self.persist_directory,
-                collection_name=self.collection_name
-            )
-            print(f"✓ ベクトルストア作成完了: {len(documents)}件のドキュメントをインデックス化しました")
-        except Exception as e:
-            raise Exception(f"ベクトルストアの作成に失敗しました: {str(e)}")
+        self.vector_store = Chroma.from_documents(
+            documents=documents,
+            embedding=self.embedding_function,
+            persist_directory=self.persist_directory,
+            collection_name=self.collection_name
+        )
 
     def load_existing(self) -> bool:
         """
@@ -64,15 +60,9 @@ class VectorStore:
             collection = self.vector_store._collection
             count = collection.count()
 
-            if count > 0:
-                print(f"✓ 既存のベクトルストアを読み込みました: {count}件のドキュメント")
-                return True
-            else:
-                print("ベクトルストアは空です")
-                return False
+            return count > 0
 
-        except Exception as e:
-            print(f"ベクトルストアの読み込みに失敗しました: {str(e)}")
+        except Exception:
             return False
 
     def add_documents(self, documents: List[Document]) -> None:
@@ -83,13 +73,9 @@ class VectorStore:
             documents: 追加するドキュメントのリスト
         """
         if self.vector_store is None:
-            raise ValueError("ベクトルストアが初期化されていません。先にcreate_from_documentsまたはload_existingを実行してください")
+            raise ValueError("ベクトルストアが初期化されていません")
 
-        try:
-            self.vector_store.add_documents(documents)
-            print(f"✓ {len(documents)}件のドキュメントを追加しました")
-        except Exception as e:
-            raise Exception(f"ドキュメントの追加に失敗しました: {str(e)}")
+        self.vector_store.add_documents(documents)
 
     def similarity_search(
         self,
@@ -111,19 +97,16 @@ class VectorStore:
         if self.vector_store is None:
             raise ValueError("ベクトルストアが初期化されていません")
 
-        try:
-            if score_threshold is not None:
-                # スコア付きで検索
-                results = self.vector_store.similarity_search_with_score(query, k=k)
-                # 閾値でフィルタリング
-                filtered_results = [
-                    doc for doc, score in results if score >= score_threshold
-                ]
-                return filtered_results
-            else:
-                return self.vector_store.similarity_search(query, k=k)
-        except Exception as e:
-            raise Exception(f"検索に失敗しました: {str(e)}")
+        if score_threshold is not None:
+            # スコア付きで検索
+            results = self.vector_store.similarity_search_with_score(query, k=k)
+            # 閾値でフィルタリング
+            filtered_results = [
+                doc for doc, score in results if score >= score_threshold
+            ]
+            return filtered_results
+        else:
+            return self.vector_store.similarity_search(query, k=k)
 
     def similarity_search_with_score(
         self,
@@ -143,20 +126,13 @@ class VectorStore:
         if self.vector_store is None:
             raise ValueError("ベクトルストアが初期化されていません")
 
-        try:
-            return self.vector_store.similarity_search_with_score(query, k=k)
-        except Exception as e:
-            raise Exception(f"検索に失敗しました: {str(e)}")
+        return self.vector_store.similarity_search_with_score(query, k=k)
 
     def delete_collection(self) -> None:
         """コレクションを削除"""
         if self.vector_store is not None:
-            try:
-                self.vector_store.delete_collection()
-                print("✓ コレクションを削除しました")
-                self.vector_store = None
-            except Exception as e:
-                raise Exception(f"コレクションの削除に失敗しました: {str(e)}")
+            self.vector_store.delete_collection()
+            self.vector_store = None
 
     def get_vector_store(self):
         """ベクトルストアのインスタンスを取得"""
@@ -175,6 +151,5 @@ class VectorStore:
         try:
             collection = self.vector_store._collection
             return collection.count()
-        except Exception as e:
-            print(f"ドキュメント数の取得に失敗しました: {str(e)}")
+        except Exception:
             return 0

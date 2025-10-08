@@ -46,10 +46,7 @@ class DocumentLoader:
         ext = ext.lower()
 
         if ext not in self.supported_extensions:
-            raise ValueError(
-                f"サポートされていないファイル形式: {ext}\n"
-                f"対応形式: {', '.join(self.supported_extensions.keys())}"
-            )
+            raise ValueError(f"サポートされていないファイル形式: {ext}")
 
         try:
             loader_class = self.supported_extensions[ext]
@@ -62,7 +59,7 @@ class DocumentLoader:
 
             return documents
         except Exception as e:
-            raise Exception(f"ファイルの読み込みに失敗しました: {file_path}\nエラー: {str(e)}")
+            raise Exception(f"ファイル読み込みエラー: {str(e)}")
 
     def load_directory(self, directory_path: str) -> List[Document]:
         """
@@ -78,8 +75,6 @@ class DocumentLoader:
             raise FileNotFoundError(f"ディレクトリが見つかりません: {directory_path}")
 
         all_documents = []
-        loaded_files = []
-        failed_files = []
 
         for filename in os.listdir(directory_path):
             file_path = os.path.join(directory_path, filename)
@@ -93,19 +88,8 @@ class DocumentLoader:
                 try:
                     documents = self.load_file(file_path)
                     all_documents.extend(documents)
-                    loaded_files.append(filename)
-                except Exception as e:
-                    failed_files.append((filename, str(e)))
-
-        # 結果をサマリー表示
-        print(f"✓ 成功: {len(loaded_files)}件")
-        for file in loaded_files:
-            print(f"  - {file}")
-
-        if failed_files:
-            print(f"\n✗ 失敗: {len(failed_files)}件")
-            for file, error in failed_files:
-                print(f"  - {file}: {error}")
+                except Exception:
+                    continue  # 失敗したファイルはスキップ
 
         return all_documents
 
@@ -125,7 +109,7 @@ class DocumentLoader:
             try:
                 documents = self.load_file(file_path)
                 all_documents.extend(documents)
-            except Exception as e:
-                print(f"警告: {file_path} のドキュメント読み込みに失敗しました: {str(e)}")
+            except Exception:
+                continue  # 失敗したファイルはスキップ
 
         return all_documents

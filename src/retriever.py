@@ -80,7 +80,7 @@ class Retriever:
             }
 
         except Exception as e:
-            raise Exception(f"検索中にエラーが発生しました: {str(e)}")
+            raise Exception(f"検索エラー: {str(e)}")
 
     def format_results(self, search_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """

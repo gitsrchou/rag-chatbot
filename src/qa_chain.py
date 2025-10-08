@@ -44,10 +44,7 @@ class QAChain:
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
 
         if not self.api_key:
-            raise ValueError(
-                "Google API Keyが設定されていません。\n"
-                "環境変数GOOGLE_API_KEYを設定するか、api_keyパラメータを使用してください"
-            )
+            raise ValueError("Google API Keyが設定されていません")
 
         # LLM設定
         self.model = model or LLM_CONFIG["model"]["default"]
@@ -150,7 +147,7 @@ class QAChain:
             }
 
         except Exception as e:
-            raise Exception(f"回答生成中にエラーが発生しました: {str(e)}")
+            raise Exception(f"回答生成エラー: {str(e)}")
 
     def answer_question_stream(self, question: str, top_k: int = None, score_threshold: float = None):
         """

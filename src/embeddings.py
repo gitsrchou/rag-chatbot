@@ -21,10 +21,7 @@ class EmbeddingGenerator:
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
 
         if not self.api_key:
-            raise ValueError(
-                "Google API Keyが設定されていません。\n"
-                "環境変数GOOGLE_API_KEYを設定するか、api_keyパラメータを使用してください"
-            )
+            raise ValueError("Google API Keyが設定されていません")
 
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model=EMBEDDING_CONFIG["model"],
@@ -50,11 +47,7 @@ class EmbeddingGenerator:
         Returns:
             Embeddingベクトルのリスト
         """
-        try:
-            return self.embeddings.embed_documents(texts)
-        except Exception as e:
-            print(f"Embeddingエラー: {str(e)}")
-            raise
+        return self.embeddings.embed_documents(texts)
 
     @retry(
         stop=stop_after_attempt(API_RETRY_ATTEMPTS),
@@ -74,11 +67,7 @@ class EmbeddingGenerator:
         Returns:
             Embeddingベクトル
         """
-        try:
-            return self.embeddings.embed_query(text)
-        except Exception as e:
-            print(f"クエリEmbeddingエラー: {str(e)}")
-            raise
+        return self.embeddings.embed_query(text)
 
     def get_embedding_function(self):
         """
