@@ -259,7 +259,10 @@ def main():
                         if result['sources']:
                             with st.expander("📚 参照元"):
                                 for source in result['sources']:
-                                    st.markdown(f"**[{source['rank']}] {source['metadata'].get('source', '')}** (スコア: {source['score']:.4f})")
+                                    st.markdown(
+                                        f"**[{source['rank']}] {source['metadata'].get('source', '')}** "
+                                        f"(スコア: {source['score']:.4f})"
+                                    )
                                     st.text(source['content'][:200] + "...")
                                     st.divider()
 

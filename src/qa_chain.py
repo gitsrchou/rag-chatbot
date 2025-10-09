@@ -86,15 +86,7 @@ class QAChain:
         score_threshold: float = None
     ) -> Dict[str, Any]:
         """
-        質問に対して回答を生成
-
-        Args:
-            question: 質問文
-            top_k: 検索で取得するドキュメント数
-            score_threshold: 類似度スコアの閾値
-
-        Returns:
-            回答と検索結果を含む辞書
+        質問に対して回答を生成（パフォーマンス計測付き）
         """
         try:
             # 1. 関連ドキュメントを検索
@@ -111,7 +103,7 @@ class QAChain:
 
             if not documents:
                 return {
-                    'answer': '関連する情報が見つかりませんでした。この質問には答えられません',
+                    'answer': '関連する情報が見つかりませんでした',
                     'sources': [],
                     'performance': {
                         'search_time': search_time,
@@ -133,7 +125,6 @@ class QAChain:
 
             # 4. 結果を整形
             formatted_sources = self.retriever.format_results(search_results)
-
             total_time = search_time + generation_time
 
             return {
@@ -142,7 +133,8 @@ class QAChain:
                 'performance': {
                     'search_time': search_time,
                     'generation_time': generation_time,
-                    'total_time': total_time
+                    'total_time': total_time,
+                    'num_results': len(documents)
                 }
             }
 
