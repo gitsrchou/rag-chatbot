@@ -1,11 +1,17 @@
-# RAG チャットボット
+# RA## このプロジェクトについて
+
+このプロジェクトは、RAG(Retrieval-Augmented Generation)技術を使用した質問応答システムです。PDF や Word 文書などをアップロードし、その内容について自然な日本語で質問すると、関連する情報を検索して回答を生成します。初心者むけのハンズオンを想定しています。
+
+![RAGチャットボットの画面](doc/画面.png)
+_RAG チャットボットのメイン画面_
+
+https://ragchatbothandon202510.streamlit.app/ボット
 
 社内文書を活用したセマンティック検索チャットボット
 
 ## このプロジェクトについて
 
 このプロジェクトは、RAG（Retrieval-Augmented Generation）技術を使用した質問応答システムです。PDF や Word 文書などをアップロードし、その内容について自然な日本語で質問すると、関連する情報を検索して回答を生成します。初心者むけのハンズオンを想定しています。
-
 ![alt text](image.png)
 
 https://ragchatbothandon202510.streamlit.app/
