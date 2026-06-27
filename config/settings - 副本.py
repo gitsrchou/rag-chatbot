@@ -41,9 +41,8 @@ RETRIEVAL_CONFIG = {
 # LLM設定
 LLM_CONFIG = {
     "model": {
-        "default": "qwen2.5:1.5b",
-#        "default": "qwen2.5:7b",
-        "options": ["qwen2.5:7b", "qwen2.5:14b"]
+        "default": "gemini-2.0-flash-exp",
+        "options": ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"]
     },
     "temperature": {
         "default": 0.0,

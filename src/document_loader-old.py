@@ -8,11 +8,9 @@ from typing import List
 from langchain_community.document_loaders import (
     PyPDFLoader,
     Docx2txtLoader,
-    TextLoader
+    TextLoader,
+    UnstructuredMarkdownLoader
 )
-
-
-
 #from langchain.schema import Document
 from langchain_core.documents import Document
 
@@ -20,23 +18,12 @@ class DocumentLoader:
     """様々な形式のドキュメントを読み込むクラス"""
 
     def __init__(self):
-#        self.supported_extensions = {
-#            '.pdf': PyPDFLoader,
-#            '.docx': Docx2txtLoader,
-#            '.txt': TextLoader,
-#            '.md': UnstructuredMarkdownLoader
-#        }
         self.supported_extensions = {
             '.pdf': PyPDFLoader,
             '.docx': Docx2txtLoader,
-            '.txt': lambda path: TextLoader(path, encoding="utf-8"),
-            '.md': lambda path: TextLoader(path, encoding="utf-8")
+            '.txt': TextLoader,
+            '.md': UnstructuredMarkdownLoader
         }
-
-
-
- 
-
 
     def load_file(self, file_path: str) -> List[Document]:
         """
@@ -102,10 +89,9 @@ class DocumentLoader:
                 try:
                     documents = self.load_file(file_path)
                     all_documents.extend(documents)
-                except Exception as e:
-                    print(f"読み込み失敗:{ file_path }, エラー: {e}")
-#                    print(f"読み込み失敗: {file_path}, エラー: {e}")
-                    continue
+                except Exception:
+                    print(f"読めないファイル名:{ file_path}")
+                    continue  # 失敗したファイルはスキップ
 
         return all_documents
 
@@ -125,9 +111,7 @@ class DocumentLoader:
             try:
                 documents = self.load_file(file_path)
                 all_documents.extend(documents)
-            except Exception as e:
-                print(f"読み込み失敗:{ file_path }, エラー: {e}")
-#				print(f"読み込み失敗: {file_path}, エラー: {e}")
+            except Exception:
                 continue  # 失敗したファイルはスキップ
 
         return all_documents

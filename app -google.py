@@ -1,5 +1,5 @@
 """
-RAGチャットボット - Streamlitメインアプリケーション（Ollama版）
+RAGチャットボット - Streamlitメインアプリケーション
 """
 
 import streamlit as st
@@ -18,16 +18,15 @@ from config.settings import (
     CHUNKING_CONFIG,
     RETRIEVAL_CONFIG,
     LLM_CONFIG,
-    EMBEDDING_CONFIG,
-    CHROMA_DB_PATH,
+    CHROMA_DB_PATH
 )
 
-# 環境変数の読み込み（Ollama では必須ではないが一応）
+# 環境変数の読み込み
 load_dotenv()
 
 # ページ設定
 st.set_page_config(
-    page_title="RAG チャットボット (Ollama)",
+    page_title="RAG チャットボット",
     page_icon="🤖",
     layout="wide"
 )
@@ -44,14 +43,18 @@ if 'indexed_files' not in st.session_state:
 
 
 def initialize_system():
-    """システムの初期化（Ollama版）"""
+    """システムの初期化"""
     try:
-        # Embeddingジェネレータの初期化（Ollama embedding）
-        embedding_gen = EmbeddingGenerator(
-            model=EMBEDDING_CONFIG["model"]
-        )
-        # Chroma 互換：クラス自体を渡す
-        embedding_function = embedding_gen
+        # API Keyの確認
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key or api_key == "your-api-key-here":
+            st.error("⚠️ Google API Keyが設定されていません。.envファイルを確認してください")
+            st.info("Google AI Studioでアカウントを作成しAPI Keyを取得してください: https://aistudio.google.com/")
+            return False
+
+        # Embeddingジェネレータの初期化
+        embedding_gen = EmbeddingGenerator(api_key=api_key)
+        embedding_function = embedding_gen.get_embedding_function()
 
         # ベクトルストアの初期化
         vector_store = VectorStore(embedding_function)
@@ -64,13 +67,8 @@ def initialize_system():
             # Retrieverの初期化
             retriever = Retriever(vector_store)
 
-            # QAチェーンの初期化（Ollama LLM）
-            qa_chain = QAChain(
-                retriever=retriever,
-                model=LLM_CONFIG["model"]["default"],
-                temperature=LLM_CONFIG["temperature"]["default"],
-                max_output_tokens=LLM_CONFIG["max_output_tokens"]["default"],
-            )
+            # QAチェーンの初期化
+            qa_chain = QAChain(retriever, api_key=api_key)
             st.session_state.qa_chain = qa_chain
 
             return True
@@ -87,6 +85,7 @@ def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
     """インデックスの構築"""
     try:
         with st.spinner("ドキュメントを読み込んでいます..."):
+            # ドキュメントローダー
             loader = DocumentLoader()
             documents = loader.load_directory(data_directory)
 
@@ -97,24 +96,22 @@ def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
             st.success(f"✓ {len(documents)}件のドキュメントを読み込みました")
 
         with st.spinner("テキストを分割しています..."):
+            # テキスト分割
             splitter = TextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
             chunks = splitter.split_documents(documents)
             st.success(f"✓ {len(chunks)}個のチャンクに分割しました")
 
         with st.spinner("Embeddingを生成してインデックスを作成しています..."):
+            # ベクトルストア作成
             st.session_state.vector_store.create_from_documents(chunks)
             st.success("✓ インデックスの作成が完了しました")
 
         # Retrieverの初期化
         retriever = Retriever(st.session_state.vector_store)
 
-        # QAチェーンの初期化（Ollama LLM）
-        qa_chain = QAChain(
-            retriever=retriever,
-            model=LLM_CONFIG["model"]["default"],
-            temperature=LLM_CONFIG["temperature"]["default"],
-            max_output_tokens=LLM_CONFIG["max_output_tokens"]["default"],
-        )
+        # QAチェーンの初期化
+        api_key = os.getenv("GOOGLE_API_KEY")
+        qa_chain = QAChain(retriever, api_key=api_key)
         st.session_state.qa_chain = qa_chain
 
         # インデックス化ファイルの記録
@@ -131,8 +128,8 @@ def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
 def main():
     """メイン関数"""
 
-    st.title("🤖 RAG チャットボット (Ollama)")
-    st.markdown("📚 ローカルの社内文書を使って質問に回答します（Ollama 完全ローカル）")
+    st.title("🤖 RAG チャットボット")
+    st.markdown("📚社内文書を使って質問に回答します")
 
     # サイドバー
     with st.sidebar:
@@ -204,9 +201,11 @@ def main():
                     st.write(f"- {file}")
 
     # メイン画面
+    # システム初期化
     if st.session_state.vector_store is None:
         initialize_system()
 
+    # チャットインターフェース
     st.subheader("💬 チャット")
 
     # チャット履歴の表示
@@ -227,9 +226,11 @@ def main():
 
     # 質問入力
     if question := st.chat_input("質問を入力してください"):
+        # QAチェーンが初期化されているか確認
         if st.session_state.qa_chain is None:
             st.warning("⚠️ まずインデックスを作成してください")
         else:
+            # ユーザーメッセージの表示
             with st.chat_message("user"):
                 st.markdown(question)
 
@@ -238,31 +239,38 @@ def main():
                 "content": question
             })
 
+            # 回答生成
             with st.chat_message("assistant"):
                 with st.spinner("回答を生成しています..."):
                     try:
-                        # LLM設定の更新（温度だけ動的に変更）
-                        st.session_state.qa_chain.update_config(
-                            temperature=temperature
-                        )
+                        # LLM設定の更新
+                        st.session_state.qa_chain.update_config(temperature=temperature)
 
+                        # 質問に対する回答
                         result = st.session_state.qa_chain.answer_question(
                             question=question,
                             top_k=top_k
                         )
 
+                        # 回答の表示
                         st.markdown(result['answer'])
 
+                        # ソース情報の表示
                         if result['sources']:
                             with st.expander("📚 参照元"):
                                 for source in result['sources']:
-                                    st.markdown(f"**[{source['rank']}] {source['metadata'].get('source', '')}** (スコア: {source['score']:.4f})")
+                                    st.markdown(
+                                        f"**[{source['rank']}] {source['metadata'].get('source', '')}** "
+                                        f"(スコア: {source['score']:.4f})"
+                                    )
                                     st.text(source['content'][:200] + "...")
                                     st.divider()
 
+                        # パフォーマンス情報の表示
                         with st.expander("⏱️ パフォーマンス"):
                             st.markdown(format_performance_report(result['performance']))
 
+                        # チャット履歴に追加
                         st.session_state.chat_history.append({
                             "role": "assistant",
                             "content": result['answer'],
