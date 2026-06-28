@@ -1,14 +1,15 @@
 """
-QAチェーンモジュール（Cloud / Local 切替対応）
-LangChain RunnableSequence 対応
+QAチェーンモジュール（Ollama版）
+LangChain + Ollama を使用した質問応答システム（Runnable版）
 """
 
-import os
 import time
 from typing import Dict, Any
 
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableSequence
+
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.retriever import Retriever
@@ -21,24 +22,27 @@ from config.settings import (
     API_RETRY_MAX_WAIT
 )
 
-# Cloud / Local 判定
-IS_CLOUD = os.getenv("ENV") == "cloud" or os.getenv("ENV") == None
-
-# Local（Ollama）
-if not IS_CLOUD:
-    from langchain_ollama import ChatOllama
-
 
 class QAChain:
-    """Cloud / Local 切替対応 QA チェーン"""
+    """Ollama を使った質問応答チェーン（Runnable版）"""
+
 
     def __init__(self, retriever, llm, temperature, max_output_tokens):
         self.retriever = retriever
 
-        # LLM（Cloud / Local 共通）
+        # LLM設定
+        self.model = model or LLM_CONFIG["model"]["default"]
+        self.temperature = temperature if temperature is not None else LLM_CONFIG["temperature"]["default"]
+        self.max_output_tokens = max_output_tokens or LLM_CONFIG["max_output_tokens"]["default"]
+
+        # Ollama LLM
         self.llm = llm
-        self.temperature = temperature
-        self.max_output_tokens = max_output_tokens
+        #self.llm = ChatOllama(
+        #    model=self.model,
+        #    temperature=self.temperature,
+        #    max_tokens=self.max_output_tokens,
+        #    stream=False   # ← これが絶対必要
+        #)
 
         # プロンプト
         self.prompt = PromptTemplate(
@@ -51,28 +55,33 @@ class QAChain:
 
     def update_config(
         self,
+        model: str = None,
         temperature: float = None,
         max_output_tokens: int = None
     ):
-        """Cloud / Local 共通で LLM 設定を更新"""
+        """LLM設定を更新（Ollama版）"""
 
+        if model:
+            self.model = model
         if temperature is not None:
             self.temperature = temperature
-
-        if max_output_tokens is not None:
+        if max_output_tokens:
             self.max_output_tokens = max_output_tokens
 
-        # Local（Ollama）のみ再生成が必要
-        if not IS_CLOUD:
-            self.llm = ChatOllama(
-                model=LLM_CONFIG["model"]["default"],
-                temperature=self.temperature,
-                max_tokens=self.max_output_tokens,
-                stream=False
-            )
+        # Ollama LLM を再初期化
+        self.llm = ChatOllama(
+            model=self.model,
+            temperature=self.temperature,
+            max_tokens=self.max_output_tokens,
+            stream=False   # ← これが絶対必要
+        )
 
-        # Runnable チェーン再構築
+        # Runnable チェーンを再構築
         self.chain = self.prompt | self.llm
+
+
+
+
 
     @retry(
         stop=stop_after_attempt(API_RETRY_ATTEMPTS),
@@ -122,9 +131,11 @@ class QAChain:
                 "context": context,
                 "question": question
             })
-
-            # content の安全な取り出し
-            answer_text = response.content if hasattr(response, "content") else str(response)
+            # 安全に content を取り出す
+            if hasattr(response, "content"):
+                answer_text = response.content
+            else:
+                answer_text = str(response) 
             generation_time = time.time() - generation_start
 
             # 4. 検索結果整形
