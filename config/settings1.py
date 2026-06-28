@@ -1,0 +1,98 @@
+"""
+設定ファイル - チャンキング、検索、LLM、Embeddingの設定
+"""
+
+# チャンキング設定
+CHUNKING_CONFIG = {
+    "chunk_size": {
+        "default": 300,
+        "min": 300,
+        "max": 500,
+        "step": 100,
+        "description": "テキストを分割する文字数"
+    },
+    "chunk_overlap": {
+        "default": 50,
+        "min": 0,
+        "max": 100,
+        "step": 10,
+        "description": "チャンク間の重複文字数"
+    },
+    "separators": ["\n\n", "\n", "。", "、", " ", ""]
+}
+
+# 検索設定
+RETRIEVAL_CONFIG = {
+    "top_k": {
+        "default": 5,
+        "min": 1,
+        "max": 20,
+        "description": "取得するドキュメント数"
+    },
+    "score_threshold": {
+        "default": 0,
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.1,
+        "description": "類似度スコアの閾値"
+    }
+}
+
+# LLM設定
+LLM_CONFIG = {
+    "model": {
+        "default": "qwen2.5:1.5b",
+#        "default": "qwen2.5:7b",
+        "options": ["qwen2.5:7b", "qwen2.5:14b"]
+    },
+    "temperature": {
+        "default": 0.0,
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.1,
+        "description": "回答の創造性"
+    },
+    "max_output_tokens": {
+        "default": 2048,
+        "min": 100,
+        "max": 8192
+    }
+}
+
+
+# Embedding設定
+EMBEDDING_CONFIG = {
+    "model": "snowflake-arctic-embed",
+#    "model": "nomic-embed-text",
+#    "model": "mxbai-embed-large",
+    "task_type": "embedding"
+}
+
+# プロンプトテンプレート
+QA_PROMPT_TEMPLATE = """以下のコンテキストを使用して質問に回答してください。
+コンテキストに情報がない場合は、「提供された情報からは回答できません」と答えてください。
+
+コンテキスト:
+{context}
+
+質問: {question}
+
+回答:"""
+
+SYSTEM_PROMPT = """あなたは社内文書検索アシスタントです。
+提供されたコンテキストに基づいて、正確で簡潔な回答を提供してください。
+不確実な情報については、その旨を明示してください。"""
+
+# ChromaDB設定
+CHROMA_DB_PATH = "./chroma_db"
+COLLECTION_NAME = "company_documents"
+
+# ファイル処理設定
+SUPPORTED_FILE_TYPES = ["pdf", "docx", "txt", "md"]
+MAX_FILE_SIZE_MB = 10
+
+# パフォーマンス設定
+BATCH_SIZE = 100
+API_RETRY_ATTEMPTS = 3
+API_RETRY_MIN_WAIT = 4
+API_RETRY_MAX_WAIT = 10

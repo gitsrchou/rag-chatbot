@@ -1,5 +1,5 @@
 """
-RAGチャットボット - Streamlitメインアプリケーション（Cloud / Local 切替対応）
+RAGチャットボット - Streamlitメインアプリケーション（Ollama版）
 """
 
 import streamlit as st
@@ -22,31 +22,34 @@ from config.settings import (
     CHROMA_DB_PATH,
 )
 
-# Cloud / Local フラグ
-IS_CLOUD = os.getenv("ENV") == "cloud"
-
-# Cloud / Local 切り替え：LLM 初期化
-if IS_CLOUD:
-    # 例：OpenAI を使う場合（Streamlit Cloud 用）
+# Cloud / Local 切り替え
+if os.getenv("ENV") == "cloud":
+    # 例：OpenAI を使う場合
     from langchain_openai import ChatOpenAI
-    llm_backend = ChatOpenAI(
+    llm = ChatOpenAI(
         model="gpt-4o-mini",
-        temperature=0,
+        temperature=0
     )
 else:
     # ローカル（Ollama）
     from langchain_community.llms import Ollama
-    llm_backend = Ollama(
+    llm = Ollama(
         model="llama3",
-        temperature=0,
+        temperature=0
     )
 
-# 環境変数の読み込み
+
+
+
+
+
+
+# 環境変数の読み込み（Ollama では必須ではないが一応）
 load_dotenv()
 
-# ページ設定（Cloud / Local でタイトルを出し分け）
+# ページ設定
 st.set_page_config(
-    page_title="RAG チャットボット (Cloud)" if IS_CLOUD else "RAG チャットボット (Ollama)",
+    page_title="RAG チャットボット (Ollama)",
     page_icon="🤖",
     layout="wide"
 )
@@ -63,12 +66,13 @@ if 'indexed_files' not in st.session_state:
 
 
 def initialize_system():
-    """システムの初期化（Cloud / Local 共通）"""
+    """システムの初期化（Ollama版）"""
     try:
-        # Embeddingジェネレータの初期化
+        # Embeddingジェネレータの初期化（Ollama embedding）
         embedding_gen = EmbeddingGenerator(
             model=EMBEDDING_CONFIG["model"]
         )
+        # Chroma 互換：クラス自体を渡す
         embedding_function = embedding_gen
 
         # ベクトルストアの初期化
@@ -82,14 +86,13 @@ def initialize_system():
             # Retrieverの初期化
             retriever = Retriever(vector_store)
 
-            # QAチェーンの初期化（LLM は Cloud / Local で切り替え済み）
+            # QAチェーンの初期化（Ollama LLM）
             qa_chain = QAChain(
                 retriever=retriever,
                 model=LLM_CONFIG["model"]["default"],
                 temperature=LLM_CONFIG["temperature"]["default"],
                 max_output_tokens=LLM_CONFIG["max_output_tokens"]["default"],
             )
-            # 必要なら QAChain 内で llm_backend を使うように拡張してもよい
             st.session_state.qa_chain = qa_chain
 
             return True
@@ -103,7 +106,7 @@ def initialize_system():
 
 
 def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
-    """インデックスの構築（Cloud / Local 共通）"""
+    """インデックスの構築"""
     try:
         with st.spinner("ドキュメントを読み込んでいます..."):
             loader = DocumentLoader()
@@ -127,7 +130,7 @@ def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
         # Retrieverの初期化
         retriever = Retriever(st.session_state.vector_store)
 
-        # QAチェーンの初期化（LLM は Cloud / Local で切り替え済み）
+        # QAチェーンの初期化（Ollama LLM）
         qa_chain = QAChain(
             retriever=retriever,
             model=LLM_CONFIG["model"]["default"],
@@ -150,12 +153,8 @@ def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
 def main():
     """メイン関数"""
 
-    if IS_CLOUD:
-        st.title("🤖 RAG チャットボット (Cloud)")
-        st.markdown("📚 GitHub 上のコード＋外部 LLM（例: OpenAI）で動作する RAG チャットボット")
-    else:
-        st.title("🤖 RAG チャットボット (Ollama)")
-        st.markdown("📚 ローカルの社内文書を使って質問に回答します（Ollama 完全ローカル）")
+    st.title("🤖 RAG チャットボット (Ollama)")
+    st.markdown("📚 ローカルの社内文書を使って質問に回答します（Ollama 完全ローカル）")
 
     # サイドバー
     with st.sidebar:
@@ -290,7 +289,7 @@ def main():
                             "role": "assistant",
                             "content": result['answer'],
                             "sources": result['sources'],
-                            "performance": result['performance"]
+                            "performance": result['performance']
                         })
 
                     except Exception as e:
