@@ -85,7 +85,7 @@ def initialize_system():
             # QAチェーンの初期化（LLM は Cloud / Local で切り替え済み）
             qa_chain = QAChain(
                 retriever=retriever,
-                model=LLM_CONFIG["model"]["default"],
+                llm=llm_backend,   # ← これを追加
                 temperature=LLM_CONFIG["temperature"]["default"],
                 max_output_tokens=LLM_CONFIG["max_output_tokens"]["default"],
             )
@@ -130,7 +130,7 @@ def build_index(data_directory: str, chunk_size: int, chunk_overlap: int):
         # QAチェーンの初期化（LLM は Cloud / Local で切り替え済み）
         qa_chain = QAChain(
             retriever=retriever,
-            model=LLM_CONFIG["model"]["default"],
+            llm=llm_backend,   # ← これを追加
             temperature=LLM_CONFIG["temperature"]["default"],
             max_output_tokens=LLM_CONFIG["max_output_tokens"]["default"],
         )

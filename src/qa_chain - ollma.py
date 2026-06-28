@@ -26,8 +26,13 @@ from config.settings import (
 class QAChain:
     """Ollama を使った質問応答チェーン（Runnable版）"""
 
-
-    def __init__(self, retriever, llm, temperature, max_output_tokens):
+    def __init__(
+        self,
+        retriever: Retriever,
+        model: str = None,
+        temperature: float = None,
+        max_output_tokens: int = None
+    ):
         self.retriever = retriever
 
         # LLM設定
@@ -36,13 +41,12 @@ class QAChain:
         self.max_output_tokens = max_output_tokens or LLM_CONFIG["max_output_tokens"]["default"]
 
         # Ollama LLM
-        self.llm = llm
-        #self.llm = ChatOllama(
-        #    model=self.model,
-        #    temperature=self.temperature,
-        #    max_tokens=self.max_output_tokens,
-        #    stream=False   # ← これが絶対必要
-        #)
+        self.llm = ChatOllama(
+            model=self.model,
+            temperature=self.temperature,
+            max_tokens=self.max_output_tokens,
+            stream=False   # ← これが絶対必要
+        )
 
         # プロンプト
         self.prompt = PromptTemplate(
