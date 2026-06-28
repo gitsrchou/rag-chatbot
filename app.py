@@ -290,7 +290,7 @@ def main():
                             "role": "assistant",
                             "content": result['answer'],
                             "sources": result['sources'],
-                            "performance": result['performance"]
+                            "performance": result['performance']
                         })
 
                     except Exception as e:
