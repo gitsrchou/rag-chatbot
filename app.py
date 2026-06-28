@@ -1,7 +1,6 @@
 """
 RAGチャットボット - Streamlitメインアプリケーション（Cloud / Local 切替対応）
 """
-st.write("ENV =", os.getenv("ENV"))
 import streamlit as st
 import os
 from dotenv import load_dotenv
