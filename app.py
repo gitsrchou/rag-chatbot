@@ -22,7 +22,7 @@ from config.settings import (
 )
 
 # Cloud / Local フラグ
-IS_CLOUD = os.getenv("ENV") == "cloud" or None
+IS_CLOUD = os.getenv("ENV") == "cloud" or os.getenv("ENV") ==None
 
 # Cloud / Local 切り替え：LLM 初期化
 if IS_CLOUD:
