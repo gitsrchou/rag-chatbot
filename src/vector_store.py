@@ -10,11 +10,8 @@ from typing import List, Optional
 from langchain_core.documents import Document
 from config.settings import CHROMA_DB_PATH, COLLECTION_NAME
 
-# Cloud / Local 判定
 IS_CLOUD = os.getenv("ENV") == "cloud"
 
-# Cloud → FAISS（永続化不要）
-# Local → Chroma（永続化あり）
 if IS_CLOUD:
     from langchain_community.vectorstores import FAISS
 else:
